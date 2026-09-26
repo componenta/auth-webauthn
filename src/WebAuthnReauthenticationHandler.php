@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace Componenta\Auth\WebAuthn;
 
 use Componenta\Auth\Session\AuthSession;
-use Componenta\Auth\Session\AuthSessionManagerInterface;
+use Componenta\Auth\Session\AuthenticatedSessionIssuer;
 use Componenta\Auth\Session\Http\AuthSessionGrantPublisher;
-use Componenta\Auth\Session\RotationReason;
 use Componenta\Identity\IdentityInterface;
 use Componenta\Identity\Uuid;
 use Psr\Http\Message\ResponseFactoryInterface;
@@ -20,7 +19,7 @@ final readonly class WebAuthnReauthenticationHandler implements
 {
     public function __construct(
         private WebAuthnService $webauthn,
-        private AuthSessionManagerInterface $sessions,
+        private AuthenticatedSessionIssuer $sessionIssuer,
         private AuthSessionGrantPublisher $publisher,
         private ResponseFactoryInterface $responses,
     ) {}
@@ -87,10 +86,10 @@ final readonly class WebAuthnReauthenticationHandler implements
             return $this->denied();
         }
 
-        $grant = $this->sessions->rotate(
+        $grant = $this->sessionIssuer->reauthenticate(
             $session,
+            $identity,
             $attempt->evidence,
-            RotationReason::Reauthentication,
         );
 
         return $this->publisher->publish(
