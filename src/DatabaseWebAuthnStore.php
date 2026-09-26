@@ -38,6 +38,7 @@ final readonly class DatabaseWebAuthnStore implements WebAuthnStoreInterface
     public function createCeremony(
         WebAuthnCeremonyType $type,
         ?UuidInterface $subjectId,
+        ?UuidInterface $bindingId,
         string $optionsJson,
         int $ttlSeconds,
     ): WebAuthnCeremony {
@@ -59,6 +60,7 @@ final readonly class DatabaseWebAuthnStore implements WebAuthnStoreInterface
             'uuid' => $uuid->toString(),
             'type' => $type->value,
             'subject_uuid' => $subjectId?->toString(),
+            'binding_uuid' => $bindingId?->toString(),
             'options_json' => $optionsJson,
             'created_at' => $this->format($now),
             'expires_at' => $this->format($expiresAt),
@@ -69,6 +71,7 @@ final readonly class DatabaseWebAuthnStore implements WebAuthnStoreInterface
             $uuid,
             $type,
             $subjectId,
+            $bindingId,
             $optionsJson,
             $now,
             $expiresAt,
@@ -284,6 +287,7 @@ final readonly class DatabaseWebAuthnStore implements WebAuthnStoreInterface
     private function hydrateCeremony(array $row): WebAuthnCeremony
     {
         $subject = $row['subject_uuid'] ?? null;
+        $binding = $row['binding_uuid'] ?? null;
 
         return new WebAuthnCeremony(
             Uuid::fromString(self::stringValue($row, 'uuid')),
@@ -293,6 +297,9 @@ final readonly class DatabaseWebAuthnStore implements WebAuthnStoreInterface
             $subject === null
                 ? null
                 : Uuid::fromString(self::stringValue($row, 'subject_uuid')),
+            $binding === null
+                ? null
+                : Uuid::fromString(self::stringValue($row, 'binding_uuid')),
             self::stringValue($row, 'options_json'),
             $this->date(self::stringValue($row, 'created_at')),
             $this->date(self::stringValue($row, 'expires_at')),

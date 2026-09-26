@@ -75,6 +75,7 @@ final readonly class WebAuthnReauthenticationHandler implements
 
         if (
             $attempt === null
+            || $attempt->bindingId !== null
             || !$attempt->subjectId->equals($identity->uuid)
         ) {
             return $this->denied();

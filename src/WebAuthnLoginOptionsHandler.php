@@ -27,7 +27,19 @@ final readonly class WebAuthnLoginOptionsHandler implements RequestHandlerInterf
     ): ResponseInterface {
         $response = $this->responses->createResponse(200);
         $preAuth = $this->preAuthentication->create();
-        $ceremony = $this->webauthn->beginAuthentication();
+
+        try {
+            $ceremony = $this->webauthn->beginAuthentication(
+                bindingId: $preAuth->transaction->uuid,
+            );
+        } catch (\Throwable $exception) {
+            $this->preAuthentication->consume(
+                $preAuth->credential,
+                $preAuth->requestToken,
+            );
+
+            throw $exception;
+        }
 
         $response->getBody()->write(json_encode([
             'ceremony_id' => $ceremony->uuid->toString(),

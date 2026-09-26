@@ -25,17 +25,27 @@ final class DatabaseWebAuthnStoreTest extends TestCase
         $subject = Uuid::fromString(
             '018f6d5d-3f7a-7a9b-8c2f-123456789abc',
         );
+        $binding = Uuid::fromString(
+            '018f6d5d-3f7a-7a9b-8c2f-123456789abd',
+        );
         $ceremony = $store->createCeremony(
             WebAuthnCeremonyType::Authentication,
             $subject,
+            $binding,
             '{"challenge":"test"}',
             300,
         );
 
-        self::assertNotNull($store->findCeremony(
+        self::assertNotNull($ceremony->bindingId);
+        self::assertTrue($ceremony->bindingId->equals($binding));
+
+        $stored = $store->findCeremony(
             $ceremony->uuid,
             WebAuthnCeremonyType::Authentication,
-        ));
+        );
+        self::assertNotNull($stored);
+        self::assertNotNull($stored->bindingId);
+        self::assertTrue($stored->bindingId->equals($binding));
         self::assertTrue($store->consumeCeremony(
             $ceremony->uuid,
             WebAuthnCeremonyType::Authentication,

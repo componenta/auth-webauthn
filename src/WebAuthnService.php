@@ -68,6 +68,7 @@ final readonly class WebAuthnService
         return $this->store->createCeremony(
             WebAuthnCeremonyType::Registration,
             $subjectId,
+            null,
             $this->codec->encodeCreationOptions($options),
             $this->config->ceremonyTtl,
         );
@@ -142,6 +143,7 @@ final readonly class WebAuthnService
 
     public function beginAuthentication(
         ?UuidInterface $subjectId = null,
+        ?UuidInterface $bindingId = null,
     ): WebAuthnCeremony {
         $allow = $subjectId === null
             ? []
@@ -165,6 +167,7 @@ final readonly class WebAuthnService
         return $this->store->createCeremony(
             WebAuthnCeremonyType::Authentication,
             $subjectId,
+            $bindingId,
             $this->codec->encodeRequestOptions($options),
             $this->config->ceremonyTtl,
         );
@@ -240,6 +243,7 @@ final readonly class WebAuthnService
         return new WebAuthnAuthenticationAttempt(
             ceremonyId: $ceremonyId,
             subjectId: $stored->subjectId,
+            bindingId: $ceremony->bindingId,
             evidence: WebAuthnEvidence::create(
                 $response->authenticatorData->isUserVerified(),
             ),

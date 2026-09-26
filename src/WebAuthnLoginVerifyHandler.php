@@ -49,13 +49,23 @@ final readonly class WebAuthnLoginVerifyHandler implements RequestHandlerInterfa
             return $this->denied();
         }
 
+        $preAuthentication = $this->preAuthentication->verify($request);
+
+        if ($preAuthentication === null) {
+            return $this->denied();
+        }
+
         $attempt = $this->webauthn->validateAuthentication(
             $ceremonyId,
             $credentialJson,
             $request->getUri()->getHost(),
         );
 
-        if ($attempt === null) {
+        if (
+            $attempt === null
+            || $attempt->bindingId === null
+            || !$attempt->bindingId->equals($preAuthentication->uuid)
+        ) {
             return $this->denied();
         }
 
@@ -78,8 +88,11 @@ final readonly class WebAuthnLoginVerifyHandler implements RequestHandlerInterfa
             $this->responses->createResponse(204),
         );
 
+        $consumed = $this->preAuthentication->consume($request);
+
         if (
-            $this->preAuthentication->consume($request) === null
+            $consumed === null
+            || !$attempt->bindingId->equals($consumed->uuid)
             || !$this->webauthn->commitAuthentication($attempt)
         ) {
             return $this->preAuthenticationPublisher->clear(

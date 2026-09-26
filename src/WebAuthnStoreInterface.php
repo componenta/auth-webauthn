@@ -12,6 +12,7 @@ interface WebAuthnStoreInterface
     public function createCeremony(
         WebAuthnCeremonyType $type,
         ?UuidInterface $subjectId,
+        ?UuidInterface $bindingId,
         string $optionsJson,
         int $ttlSeconds,
     ): WebAuthnCeremony;

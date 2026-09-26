@@ -2,6 +2,7 @@ CREATE TABLE auth_webauthn_ceremonies (
     uuid TEXT PRIMARY KEY,
     type TEXT NOT NULL,
     subject_uuid TEXT NULL,
+    binding_uuid TEXT NULL,
     options_json TEXT NOT NULL,
     created_at TEXT NOT NULL,
     expires_at TEXT NOT NULL,

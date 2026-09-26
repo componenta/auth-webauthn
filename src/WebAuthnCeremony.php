@@ -13,6 +13,7 @@ final readonly class WebAuthnCeremony
         public UuidInterface $uuid,
         public WebAuthnCeremonyType $type,
         public ?UuidInterface $subjectId,
+        public ?UuidInterface $bindingId,
         public string $optionsJson,
         public DateTimeImmutable $createdAt,
         public DateTimeImmutable $expiresAt,
