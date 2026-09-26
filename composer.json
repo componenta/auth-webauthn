@@ -1,0 +1,52 @@
+{
+    "name": "componenta/auth-webauthn",
+    "description": "WebAuthn/passkey authentication and reauthentication for Componenta Auth 3",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.4",
+        "ext-json": "*",
+        "ext-openssl": "*",
+        "componenta/auth": "dev-auth-3",
+        "componenta/auth-session": "dev-main",
+        "componenta/auth-session-http": "dev-main",
+        "componenta/clock": "^1.1.0",
+        "componenta/identity": "^1.0",
+        "cycle/database": "^2.22",
+        "psr/clock": "^1.0",
+        "psr/http-factory": "^1.0",
+        "psr/http-message": "^2.0",
+        "psr/http-server-handler": "^1.0",
+        "symfony/serializer": "^7.0|^8.0",
+        "web-auth/webauthn-lib": "^5.3"
+    },
+    "require-dev": {
+        "nyholm/psr7": "^1.8",
+        "phpstan/phpstan": "^2.1",
+        "phpunit/phpunit": "^12.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Componenta\\Auth\\WebAuthn\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Componenta\\Auth\\WebAuthn\\Tests\\": "tests/"
+        }
+    },
+    "repositories": [
+        {"type": "vcs", "url": "https://github.com/componenta/auth.git"},
+        {"type": "vcs", "url": "https://github.com/componenta/auth-session.git"},
+        {"type": "vcs", "url": "https://github.com/componenta/auth-session-http.git"}
+    ],
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "extra": {"branch-alias": {"dev-main": "1.0.x-dev"}},
+    "config": {"sort-packages": true},
+    "scripts": {
+        "test": "@php vendor/bin/phpunit --configuration phpunit.xml.dist",
+        "phpstan": "@php vendor/bin/phpstan analyse src --level=max",
+        "check": ["@phpstan", "@test"]
+    }
+}
