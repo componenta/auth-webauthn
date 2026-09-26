@@ -88,10 +88,7 @@ final readonly class WebAuthnReauthenticationHandler implements
 
         $grant = $this->sessions->rotate(
             $session,
-            WebAuthnEvidence::augment(
-                $session->evidence,
-                $attempt->evidence->hasCapability('user_verified'),
-            ),
+            $attempt->evidence,
             RotationReason::Reauthentication,
         );
 

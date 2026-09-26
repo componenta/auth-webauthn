@@ -27,21 +27,5 @@ final class WebAuthnEvidence
         );
     }
 
-    public static function augment(
-        AuthenticationEvidence $existing,
-        bool $userVerified,
-    ): AuthenticationEvidence {
-        $proof = self::create($userVerified);
 
-        return new AuthenticationEvidence(
-            methods: array_values(array_unique([
-                ...$existing->methods,
-                ...$proof->methods,
-            ])),
-            capabilities: array_values(array_unique([
-                ...$existing->capabilities,
-                ...$proof->capabilities,
-            ])),
-        );
-    }
 }
