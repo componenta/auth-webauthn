@@ -17,3 +17,10 @@ assertion adds `webauthn`, `possession` and `phishing_resistant`.
 `user_verified` is added separately only when the assertion's UV flag is set,
 so privileged policy can explicitly require both phishing resistance and user
 verification.
+
+## Authentication service contract
+
+`WebAuthnService::validateAuthentication()` returns a
+`WebAuthnAuthenticationAttempt` or `null`. After checking admission and browser
+binding, call `commitAuthentication()`; issue or rotate a session only when it
+returns `true`. The unused preliminary `WebAuthnAuthentication` DTO has been removed.

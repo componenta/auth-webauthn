@@ -127,7 +127,7 @@ final class LoginAdmissionTest extends TestCase
         $guard = $this->createMock(AuthenticationGuardInterface::class);
         $guard->expects(self::exactly($earlyBlocked ? 1 : 2))->method('check')->with($identity, self::callback(static fn(AuthenticationEvidence $evidence): bool => $evidence->hasMethod('webauthn') && $evidence->hasCapability('user_verified')))->willReturnOnConsecutiveCalls($earlyBlocked ? new InvalidCredentials() : null, $finalBlocked ? new InvalidCredentials() : null);
         $sessions = $this->createMock(AuthSessionManagerInterface::class);
-        $grant = new AuthSessionGrant(new AuthSession($uuids->generate(), $identity->uuid, WebAuthnEvidence::create(true), 1, $now, $now, null, $now, $now->modify('+1800 seconds'), $now->modify('+28800 seconds')), SessionCredential::fromBytes(str_repeat('s', 32)));
+        $grant = new AuthSessionGrant(new AuthSession($uuids->generate(), $identity->uuid, WebAuthnEvidence::create(true), 1, $now, null, $now, $now->modify('+1800 seconds'), $now->modify('+28800 seconds')), SessionCredential::fromBytes(str_repeat('s', 32)));
         $sessions->expects($blocked ? self::never() : self::once())->method('create')->willReturn($grant);
         $sessions->expects($blocked ? self::never() : self::once())->method('isGrantCurrent')->willReturn(true);
         $policies = $this->createStub(AuthSessionPolicyProviderInterface::class);

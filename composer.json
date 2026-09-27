@@ -7,11 +7,10 @@
         "php": "^8.4",
         "ext-json": "*",
         "ext-openssl": "*",
-        "componenta/auth": "dev-auth-3",
-        "componenta/auth-session": "dev-main",
-        "componenta/auth-session-http": "dev-main",
-        "componenta/clock": "^1.1.0",
-        "componenta/identity": "^1.0",
+        "componenta/auth": "^3.0",
+        "componenta/auth-session": "^1.0",
+        "componenta/auth-session-http": "^1.0",
+        "componenta/identity": "^1.0.1",
         "cycle/database": "^2.22",
         "psr/clock": "^1.0",
         "psr/http-factory": "^1.0",
@@ -21,6 +20,7 @@
         "web-auth/webauthn-lib": "^5.3"
     },
     "require-dev": {
+        "componenta/clock": "^1.1.0",
         "nyholm/psr7": "^1.8",
         "phpstan/phpstan": "^2.1",
         "phpunit/phpunit": "^12.0"
@@ -53,7 +53,7 @@
             "url": "https://github.com/componenta/auth-http.git"
         }
     ],
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "prefer-stable": true,
     "extra": {
         "branch-alias": {
