@@ -84,7 +84,10 @@ final readonly class DatabaseWebAuthnStore implements WebAuthnStoreInterface
         WebAuthnCeremonyType $type,
     ): ?WebAuthnCeremony {
         $now = $this->format($this->now());
-        $row = $this->database->select()
+        $row = $this->database->select()->withDriver(
+            $this->database->getDriver(DatabaseInterface::WRITE),
+            $this->database->getPrefix(),
+        )
             ->from($this->ceremonyTable)
             ->where('uuid', $ceremonyId->toString())
             ->where('type', $type->value)
@@ -144,7 +147,10 @@ final readonly class DatabaseWebAuthnStore implements WebAuthnStoreInterface
             return null;
         }
 
-        $row = $this->database->select()
+        $row = $this->database->select()->withDriver(
+            $this->database->getDriver(DatabaseInterface::WRITE),
+            $this->database->getPrefix(),
+        )
             ->from($this->credentialTable)
             ->where(
                 'credential_hash',
@@ -173,7 +179,10 @@ final readonly class DatabaseWebAuthnStore implements WebAuthnStoreInterface
     #[\Override]
     public function allCredentials(UuidInterface $subjectId): array
     {
-        $rows = $this->database->select()
+        $rows = $this->database->select()->withDriver(
+            $this->database->getDriver(DatabaseInterface::WRITE),
+            $this->database->getPrefix(),
+        )
             ->from($this->credentialTable)
             ->where('subject_uuid', $subjectId->toString())
             ->orderBy('created_at', 'ASC')
@@ -253,7 +262,10 @@ final readonly class DatabaseWebAuthnStore implements WebAuthnStoreInterface
         }
 
         $now = $this->format($this->now());
-        $rows = $this->database->select('uuid')
+        $rows = $this->database->select('uuid')->withDriver(
+            $this->database->getDriver(DatabaseInterface::WRITE),
+            $this->database->getPrefix(),
+        )
             ->from($this->ceremonyTable)
             ->where(static function (mixed $query) use ($now): void {
                 if (!$query instanceof \Cycle\Database\Query\SelectQuery) {
