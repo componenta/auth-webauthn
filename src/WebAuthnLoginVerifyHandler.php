@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Componenta\Auth\WebAuthn;
 
+use Componenta\Auth\DeniedReasonInterface;
 use Componenta\Auth\AuthenticationGuardInterface;
-use Componenta\Auth\Http\DeniedResponseFactoryInterface;
 use Componenta\Auth\IdentityProviderInterface;
 use Componenta\Auth\Session\AuthenticatedSessionIssuer;
 use Componenta\Auth\Session\Http\AuthSessionGrantPublisher;
@@ -21,9 +21,6 @@ use Psr\Http\Server\RequestHandlerInterface;
 
 final readonly class WebAuthnLoginVerifyHandler implements RequestHandlerInterface
 {
-    /** @var list<AuthenticationGuardInterface> */
-    private array $guards;
-
     public function __construct(
         private WebAuthnService $webauthn,
         private IdentityProviderInterface $identities,
@@ -33,10 +30,8 @@ final readonly class WebAuthnLoginVerifyHandler implements RequestHandlerInterfa
         private AuthSessionGrantPublisher $sessionPublisher,
         private SessionMetadataExtractorInterface $metadata,
         private ResponseFactoryInterface $responses,
-        AuthenticationGuardInterface ...$guards,
-    ) {
-        $this->guards = array_values($guards);
-    }
+        private AuthenticationGuardInterface $guard,
+    ) {}
 
     #[\Override]
     public function handle(
@@ -78,10 +73,8 @@ final readonly class WebAuthnLoginVerifyHandler implements RequestHandlerInterfa
             return $this->denied();
         }
 
-        foreach ($this->guards as $guard) {
-            if ($guard->check($identity, $attempt->evidence) !== null) {
-                return $this->denied();
-            }
+        if ($this->guard->check($identity, $attempt->evidence) !== null) {
+            return $this->denied();
         }
 
         $response = $this->preAuthenticationPublisher->clear(
@@ -105,6 +98,10 @@ final readonly class WebAuthnLoginVerifyHandler implements RequestHandlerInterfa
             $attempt->evidence,
             $this->metadata->extract($request),
         );
+
+        if ($grant instanceof DeniedReasonInterface) {
+            return $this->preAuthenticationPublisher->clear($this->denied());
+        }
 
         return $this->sessionPublisher->publish(
             $request,
