@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Componenta\Auth\WebAuthn;
 
+use Componenta\Auth\Session\Http\FactorManagementGuard;
 use Componenta\Identity\IdentityInterface;
 use Componenta\Identity\Uuid;
 use Psr\Http\Message\ResponseFactoryInterface;
@@ -17,6 +18,7 @@ final readonly class WebAuthnRegistrationCompleteHandler implements
     public function __construct(
         private WebAuthnService $webauthn,
         private ResponseFactoryInterface $responses,
+        private FactorManagementGuard $factorManagement,
     ) {}
 
     #[\Override]
@@ -24,6 +26,12 @@ final readonly class WebAuthnRegistrationCompleteHandler implements
         #[\SensitiveParameter]
         ServerRequestInterface $request,
     ): ResponseInterface {
+        $denial = $this->factorManagement->check($request);
+
+        if ($denial !== null) {
+            return $denial;
+        }
+
         $identity = $request->getAttribute(IdentityInterface::class);
         $body = $request->getParsedBody();
 
