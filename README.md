@@ -24,3 +24,13 @@ verification.
 `WebAuthnAuthenticationAttempt` or `null`. After checking admission and browser
 binding, call `commitAuthentication()`; issue or rotate a session only when it
 returns `true`. The unused preliminary `WebAuthnAuthentication` DTO has been removed.
+
+## Version 2 compatibility
+
+This line requires `componenta/auth-session-http ^2.0.1`, and therefore the
+CSRF v3 browser security contract. Unsafe CSRF-protected requests must include
+valid Origin/Referer evidence as well as an admitted CSRF token; missing source
+metadata is denied, not bypassed.
+
+See [CHANGELOG.md](CHANGELOG.md) for coordinated migration details.
+Authentication still uses Componenta Auth's shared session issuer.
