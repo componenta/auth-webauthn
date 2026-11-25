@@ -50,6 +50,16 @@ use Webauthn\TrustPath\EmptyTrustPath;
 
 final class LoginAdmissionTest extends TestCase
 {
+    // Public synthetic test key. OpenSSL returns its Y coordinate as 31 bytes,
+    // so the virtual authenticator also covers leading-zero EC coordinates.
+    private const string AUTHENTICATOR_KEY = <<<'PEM'
+        -----BEGIN PRIVATE KEY-----
+        MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg/rMgAKHTxBLBcJmC
+        dTFLjHihSd2xOE/fPYKoYNxWLcqhRANCAAQJnGWMi9TSK/ImkXxZAeB2YqT+eOGF
+        H4QO74KlwSXXnwB5KImnHnn80II+Q6CArNlEOOHr7OpXlgPwCfE3XxpQ
+        -----END PRIVATE KEY-----
+        PEM;
+
     /** @return iterable<string, array{bool, bool}> */
     public static function admission(): iterable
     {
@@ -77,14 +87,17 @@ final class LoginAdmissionTest extends TestCase
         $store = new DatabaseWebAuthnStore(SqliteDatabaseFixture::create(), $clock, $uuids, $codec);
         $service = new WebAuthnService($config, $store, $codec, new WebAuthnValidator($config));
 
-        // A locally generated virtual authenticator. It uses a real P-256
+        // A local virtual authenticator. It uses a real P-256
         // signature, not a mocked successful WebAuthn validation result.
-        $key = openssl_pkey_new(['private_key_type' => OPENSSL_KEYTYPE_EC, 'curve_name' => 'prime256v1']);
+        $key = openssl_pkey_get_private(self::AUTHENTICATOR_KEY);
         self::assertInstanceOf(\OpenSSLAsymmetricKey::class, $key);
         $details = openssl_pkey_get_details($key);
         self::assertIsArray($details);
         $credentialId = random_bytes(32);
-        $coseKey = hex2bin('a5010203262001215820') . $details['ec']['x'] . hex2bin('225820') . $details['ec']['y'];
+        $coseKey = hex2bin('a5010203262001215820')
+            . str_pad($details['ec']['x'], 32, "\0", STR_PAD_LEFT)
+            . hex2bin('225820')
+            . str_pad($details['ec']['y'], 32, "\0", STR_PAD_LEFT);
         $record = CredentialRecord::create(
             publicKeyCredentialId: $credentialId,
             type: 'public-key',
