@@ -31,7 +31,7 @@ final readonly class WebAuthnReauthenticationOptionsHandler implements
 
         $ceremony = $this->webauthn->beginAuthentication($identity->uuid);
         $response = $this->responses->createResponse(200);
-        $response->getBody()->write(json_encode([
+        JsonResponseBody::write($response, [
             'ceremony_id' => $ceremony->uuid->toString(),
             'options' => json_decode(
                 $ceremony->optionsJson,
@@ -39,7 +39,7 @@ final readonly class WebAuthnReauthenticationOptionsHandler implements
                 64,
                 JSON_THROW_ON_ERROR,
             ),
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         return $response
             ->withHeader('Content-Type', 'application/json')

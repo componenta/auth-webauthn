@@ -41,7 +41,7 @@ final readonly class WebAuthnLoginOptionsHandler implements RequestHandlerInterf
             throw $exception;
         }
 
-        $response->getBody()->write(json_encode([
+        JsonResponseBody::write($response, [
             'ceremony_id' => $ceremony->uuid->toString(),
             'options' => json_decode(
                 $ceremony->optionsJson,
@@ -49,7 +49,7 @@ final readonly class WebAuthnLoginOptionsHandler implements RequestHandlerInterf
                 64,
                 JSON_THROW_ON_ERROR,
             ),
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         return $this->preAuthenticationPublisher->publish(
             $response
