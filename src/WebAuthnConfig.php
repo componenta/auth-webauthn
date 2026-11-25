@@ -6,13 +6,16 @@ namespace Componenta\Auth\WebAuthn;
 
 final readonly class WebAuthnConfig
 {
+    /** @var list<string> */
+    public array $allowedOrigins;
+
     /**
      * @param list<string> $allowedOrigins
      */
     public function __construct(
         public string $rpId,
         public string $rpName,
-        public array $allowedOrigins,
+        array $allowedOrigins,
         public int $ceremonyTtl = 300,
         public int $timeoutMs = 300_000,
     ) {
@@ -32,15 +35,16 @@ final readonly class WebAuthnConfig
             throw new \InvalidArgumentException('WebAuthn RP name is invalid.');
         }
 
-        if ($this->allowedOrigins === []) {
+        if ($allowedOrigins === []) {
             throw new \InvalidArgumentException(
                 'WebAuthn requires at least one allowed origin.',
             );
         }
 
         $rpId = strtolower($this->rpId);
+        $origins = [];
 
-        foreach ($this->allowedOrigins as $origin) {
+        foreach ($allowedOrigins as $origin) {
             $parsed = parse_url($origin);
 
             if (
@@ -57,6 +61,8 @@ final readonly class WebAuthnConfig
                     'WebAuthn allowed origin must be an exact HTTPS origin.',
                 );
             }
+
+            $origins[] = $origin;
 
             $host = strtolower($parsed['host']);
 
@@ -80,5 +86,7 @@ final readonly class WebAuthnConfig
                 'WebAuthn ceremony timing is invalid.',
             );
         }
+
+        $this->allowedOrigins = $origins;
     }
 }

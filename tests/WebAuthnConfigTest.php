@@ -44,4 +44,21 @@ final class WebAuthnConfigTest extends TestCase
             allowedOrigins: ['https://evil.example.net'],
         );
     }
+
+    public function testAllowedOriginsRemainTheValidatedConfigurationWhenInputReferenceChanges(): void
+    {
+        $origin = 'https://admin.example.com:8443';
+        $config = new WebAuthnConfig(
+            rpId: 'example.com',
+            rpName: 'Example',
+            allowedOrigins: ['https://example.com', &$origin],
+        );
+
+        $origin = 'http://outside.example.net';
+
+        self::assertSame([
+            'https://example.com',
+            'https://admin.example.com:8443',
+        ], $config->allowedOrigins);
+    }
 }
