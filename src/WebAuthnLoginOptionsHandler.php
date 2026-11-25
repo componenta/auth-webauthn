@@ -32,6 +32,24 @@ final readonly class WebAuthnLoginOptionsHandler implements RequestHandlerInterf
             $ceremony = $this->webauthn->beginAuthentication(
                 bindingId: $preAuth->transaction->uuid,
             );
+
+            JsonResponseBody::write($response, [
+                'ceremony_id' => $ceremony->uuid->toString(),
+                'options' => json_decode(
+                    $ceremony->optionsJson,
+                    true,
+                    64,
+                    JSON_THROW_ON_ERROR,
+                ),
+            ]);
+
+            return $this->preAuthenticationPublisher->publish(
+                $response
+                    ->withHeader('Content-Type', 'application/json')
+                    ->withHeader('Cache-Control', 'no-store')
+                    ->withHeader('Pragma', 'no-cache'),
+                $preAuth,
+            );
         } catch (\Throwable $exception) {
             $this->preAuthentication->consume(
                 $preAuth->credential,
@@ -40,23 +58,5 @@ final readonly class WebAuthnLoginOptionsHandler implements RequestHandlerInterf
 
             throw $exception;
         }
-
-        JsonResponseBody::write($response, [
-            'ceremony_id' => $ceremony->uuid->toString(),
-            'options' => json_decode(
-                $ceremony->optionsJson,
-                true,
-                64,
-                JSON_THROW_ON_ERROR,
-            ),
-        ]);
-
-        return $this->preAuthenticationPublisher->publish(
-            $response
-                ->withHeader('Content-Type', 'application/json')
-                ->withHeader('Cache-Control', 'no-store')
-                ->withHeader('Pragma', 'no-cache'),
-            $preAuth,
-        );
     }
 }
