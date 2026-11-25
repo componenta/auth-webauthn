@@ -6,6 +6,7 @@ namespace Componenta\Auth\WebAuthn;
 
 use Componenta\Auth\DeniedReasonInterface;
 use Componenta\Auth\AuthenticationGuardInterface;
+use Componenta\Auth\Http\CredentialTransportState;
 use Componenta\Auth\IdentityProviderInterface;
 use Componenta\Auth\Session\AuthenticatedSessionIssuer;
 use Componenta\Auth\Session\Http\AuthSessionGrantPublisher;
@@ -91,6 +92,12 @@ final readonly class WebAuthnLoginVerifyHandler implements RequestHandlerInterfa
             return $this->preAuthenticationPublisher->clear(
                 $this->denied(),
             );
+        }
+
+        $transportState = $request->getAttribute(CredentialTransportState::class);
+
+        if ($transportState instanceof CredentialTransportState) {
+            $transportState->discardQueued();
         }
 
         $grant = $this->sessionIssuer->issue(

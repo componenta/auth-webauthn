@@ -7,6 +7,7 @@ namespace Componenta\Auth\WebAuthn\Tests;
 use Componenta\Auth\AuthenticationEvidence;
 use Componenta\Auth\AuthenticationGuardInterface;
 use Componenta\Auth\Denied\InvalidCredentials;
+use Componenta\Auth\Http\CredentialTransportState;
 use Componenta\Auth\Http\PayloadStorageInterface;
 use Componenta\Auth\IdentityProviderInterface;
 use Componenta\Auth\Session\AuthSession;
@@ -19,6 +20,8 @@ use Componenta\Auth\Session\Http\AuthSessionGrantPublisher;
 use Componenta\Auth\Session\Http\PreAuthenticationConsumer;
 use Componenta\Auth\Session\Http\PreAuthenticationCookieTransport;
 use Componenta\Auth\Session\Http\PreAuthenticationGrantPublisher;
+use Componenta\Auth\Session\Http\SessionCookieTransport;
+use Componenta\Auth\Session\Http\SessionCredentialPayload;
 use Componenta\Auth\Session\Http\SessionMetadataExtractorInterface;
 use Componenta\Auth\Session\PreAuthenticationCredential;
 use Componenta\Auth\Session\PreAuthenticationManagerInterface;
@@ -60,16 +63,24 @@ final class LoginAdmissionTest extends TestCase
         -----END PRIVATE KEY-----
         PEM;
 
-    /** @return iterable<string, array{bool, bool}> */
+    /** @return iterable<string, array{bool, bool, bool, bool}> */
     public static function admission(): iterable
     {
-        yield 'blocked account' => [true, false];
-        yield 'blocked at final issuance' => [false, true];
-        yield 'allowed account' => [false, false];
+        yield 'blocked account' => [true, false, false, false];
+        yield 'blocked at final issuance' => [false, true, false, false];
+        yield 'allowed account' => [false, false, false, false];
+        yield 'stock transport without pending grant' => [false, false, true, false];
+        yield 'stock transport replaces pending grant' => [false, false, true, true];
+        yield 'final denial discards pending grant' => [false, true, true, true];
     }
 
     #[DataProvider('admission')]
-    public function testAValidSignedAssertionStillRequiresTheSharedAdmissionGuard(bool $earlyBlocked, bool $finalBlocked): void
+    public function testAValidSignedAssertionStillRequiresTheSharedAdmissionGuard(
+        bool $earlyBlocked,
+        bool $finalBlocked,
+        bool $useStockTransport,
+        bool $hasPendingGrant,
+    ): void
     {
         if (!extension_loaded('pdo_sqlite')) {
             self::markTestSkipped('pdo_sqlite is required.');
@@ -141,25 +152,58 @@ final class LoginAdmissionTest extends TestCase
         $guard->expects(self::exactly($earlyBlocked ? 1 : 2))->method('check')->with($identity, self::callback(static fn(AuthenticationEvidence $evidence): bool => $evidence->hasMethod('webauthn') && $evidence->hasCapability('user_verified')))->willReturnOnConsecutiveCalls($earlyBlocked ? new InvalidCredentials() : null, $finalBlocked ? new InvalidCredentials() : null);
         $sessions = $this->createMock(AuthSessionManagerInterface::class);
         $grant = new AuthSessionGrant(new AuthSession($uuids->generate(), $identity->uuid, WebAuthnEvidence::create(true), 1, $now, null, $now, $now->modify('+1800 seconds'), $now->modify('+28800 seconds')), SessionCredential::fromBytes(str_repeat('s', 32)));
-        $sessions->expects($blocked ? self::never() : self::once())->method('create')->willReturn($grant);
+        $state = new CredentialTransportState();
+        $creationSawEmptyState = null;
+        $sessions->expects($blocked ? self::never() : self::once())->method('create')->willReturnCallback(
+            static function () use ($grant, $state, &$creationSawEmptyState): AuthSessionGrant {
+                $creationSawEmptyState = $state->empty;
+                return $grant;
+            },
+        );
         $sessions->expects($blocked ? self::never() : self::once())->method('isGrantCurrent')->willReturn(true);
         $policies = $this->createStub(AuthSessionPolicyProviderInterface::class);
         $policies->method('for')->willReturn(new AuthSessionPolicy(1800, 28800));
-        $storage = $this->createMock(PayloadStorageInterface::class);
-        $storage->expects($blocked ? self::never() : self::once())->method('store')->willReturnCallback(static fn(ServerRequestInterface $request, ResponseInterface $response, object $payload): ResponseInterface => $response->withHeader('X-Test-Published', 'yes'));
+        if ($useStockTransport) {
+            $storage = new SessionCookieTransport();
+        } else {
+            $storage = $this->createMock(PayloadStorageInterface::class);
+            $storage->expects($blocked ? self::never() : self::once())->method('store')->willReturnCallback(static fn(ServerRequestInterface $request, ResponseInterface $response, object $payload): ResponseInterface => $response->withHeader('X-Test-Published', 'yes'));
+        }
+        $pendingCredential = SessionCredential::fromBytes(str_repeat('p', 32));
+        $discarded = 0;
+        if ($hasPendingGrant) {
+            $state->queue($storage, new SessionCredentialPayload($pendingCredential));
+            $state->onDiscard(static function () use (&$discarded): void { ++$discarded; });
+        }
         $cookies = new PreAuthenticationCookieTransport();
         $metadata = $this->createStub(SessionMetadataExtractorInterface::class);
         $metadata->method('extract')->willReturn([]);
         $handler = new WebAuthnLoginVerifyHandler($service, $identities, new PreAuthenticationConsumer($preManager, $cookies), new PreAuthenticationGrantPublisher($cookies), new AuthenticatedSessionIssuer($sessions, $policies, new \Componenta\Auth\AuthenticationAdmission($identities, $guard)), new AuthSessionGrantPublisher($sessions, $storage), $metadata, new Psr17Factory(), $guard);
         $request = (new ServerRequest('POST', 'https://example.com/login/webauthn'))
+            ->withAttribute(CredentialTransportState::class, $state)
             ->withCookieParams(['__Host-auth_pre' => PreAuthenticationCredential::fromBytes(str_repeat('a', 32))->toString()])
             ->withHeader('X-Pre-Auth-Token', PreAuthenticationRequestToken::fromBytes(str_repeat('b', 32))->toString())
             ->withParsedBody(['ceremony_id' => $ceremony->uuid->toString(), 'credential' => $browser]);
 
         $response = $handler->handle($request);
+        if ($useStockTransport) {
+            $response = $state->apply($request, $response);
+        }
 
         self::assertSame($blocked ? 401 : 204, $response->getStatusCode());
-        self::assertSame($blocked ? '' : 'yes', $response->getHeaderLine('X-Test-Published'));
+        if ($useStockTransport) {
+            $cookies = $response->getHeaderLine('Set-Cookie');
+            if (!$blocked) {
+                self::assertStringContainsString($grant->credential->toString(), $cookies);
+                self::assertTrue($creationSawEmptyState, 'Pending work must be discarded before session issuance.');
+            } else {
+                self::assertStringNotContainsString('__Host-auth_session=', $cookies);
+            }
+            self::assertStringNotContainsString($pendingCredential->toString(), $cookies);
+            self::assertSame($hasPendingGrant ? 1 : 0, $discarded);
+        } else {
+            self::assertSame($blocked ? '' : 'yes', $response->getHeaderLine('X-Test-Published'));
+        }
         self::assertSame($earlyBlocked ? 0 : 1, $store->findCredential($credentialId)?->record->counter);
         self::assertSame($earlyBlocked, $store->findCeremony($ceremony->uuid, WebAuthnCeremonyType::Authentication) !== null);
     }
