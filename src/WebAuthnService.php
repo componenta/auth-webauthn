@@ -276,6 +276,7 @@ final readonly class WebAuthnService
         if (
             $value === ''
             || strlen($value) > 320
+            || preg_match('//u', $value) !== 1
             || preg_match('/[\x00-\x1F\x7F]/', $value) === 1
         ) {
             throw new \InvalidArgumentException($name . ' is invalid.');
