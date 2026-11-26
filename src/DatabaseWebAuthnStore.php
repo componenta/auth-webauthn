@@ -8,6 +8,7 @@ use Componenta\Identity\Uuid;
 use Componenta\Identity\UuidFactoryInterface;
 use Componenta\Identity\UuidInterface;
 use Cycle\Database\DatabaseInterface;
+use Cycle\Database\Injection\Fragment;
 use DateTimeImmutable;
 use DateTimeZone;
 use Psr\Clock\ClockInterface;
@@ -230,6 +231,8 @@ final readonly class DatabaseWebAuthnStore implements WebAuthnStoreInterface
                 'record_json' => $this->codec->encodeCredentialRecord($record),
                 'counter' => $record->counter,
                 'last_used_at' => $this->format($this->now()),
+                // A matched zero-counter update must also count as changed.
+                'revision' => new Fragment('revision + 1'),
             ])
             ->run() === 1;
     }

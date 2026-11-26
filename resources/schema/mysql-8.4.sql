@@ -15,6 +15,7 @@ CREATE TABLE auth_webauthn_credentials (
     subject_uuid CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
     record_json LONGTEXT NOT NULL,
     counter BIGINT UNSIGNED NOT NULL,
+    revision BIGINT NOT NULL DEFAULT 0,
     created_at DATETIME(6) NOT NULL,
     last_used_at DATETIME(6) NULL,
     INDEX idx_auth_webauthn_subject (subject_uuid)

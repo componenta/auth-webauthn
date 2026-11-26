@@ -11,11 +11,15 @@ use Cycle\Database\DatabaseManager;
 
 final class SqliteDatabaseFixture
 {
-    public static function create(): DatabaseInterface
+    public static function create(
+        ?SQLiteDriverConfig $driverConfig = null,
+    ): DatabaseInterface
     {
         $database = (new DatabaseManager(new DatabaseConfig([
             'databases' => ['default' => ['connection' => 'sqlite']],
-            'connections' => ['sqlite' => new SQLiteDriverConfig()],
+            'connections' => [
+                'sqlite' => $driverConfig ?? new SQLiteDriverConfig(),
+            ],
         ])))->database('default');
 
         $schema = file_get_contents(

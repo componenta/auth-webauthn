@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Accept valid zero-counter credential updates even when the database reports
+  changed rows and the record and timestamp are unchanged. The conditional update
+  now increments an internal storage revision.
+- Existing installations must apply the credential revision migration before
+  deploying this code. See the [database schema upgrade](README.md#database-schema-upgrade).
+
 ## v2.0.0 (2026-10-10)
 
 ### Dependency compatibility

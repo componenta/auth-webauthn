@@ -25,6 +25,27 @@ verification.
 binding, call `commitAuthentication()`; issue or rotate a session only when it
 returns `true`. The unused preliminary `WebAuthnAuthentication` DTO has been removed.
 
+## Database schema upgrade
+
+`DatabaseWebAuthnStore` requires a `revision` column in the credential table.
+Each accepted credential update increments it in the same conditional SQL update.
+This preserves successful authentication for authenticators with a zero signature
+counter when the credential record and timestamp remain unchanged, including on
+drivers that report only changed rows. Credential identity, subject and expected
+counter remain conditions of that update; the revision is internal storage state.
+
+New databases should use the current files in `resources/schema`. For an existing
+database, apply the matching migration **before deploying the updated PHP code**:
+
+- [MySQL 8.4 migration](resources/migrations/2026-11-26-credential-revision/mysql-8.4.sql)
+- [PostgreSQL migration](resources/migrations/2026-11-26-credential-revision/postgresql.sql)
+- [SQLite migration](resources/migrations/2026-11-26-credential-revision/sqlite.sql)
+
+Run the migration once. If the store uses a custom credential table name or a
+Cycle database prefix, adjust the migration's table name accordingly. Existing
+credentials receive the default revision of zero. Older package code remains
+compatible with the added column, so the schema can be upgraded first.
+
 ## Version 2 compatibility
 
 This line requires `componenta/auth-session-http ^2.0.1`, and therefore the
