@@ -39,6 +39,10 @@ final readonly class WebAuthnValidator
         return $this->registration->check($response, $options, $host);
     }
 
+    /**
+     * @param string|null $userHandle User handle identified by the server before
+     * the ceremony, or null for discoverable authentication.
+     */
     public function authenticate(
         CredentialRecord $record,
         AuthenticatorAssertionResponse $response,

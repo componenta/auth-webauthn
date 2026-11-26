@@ -209,6 +209,7 @@ final readonly class WebAuthnService
 
         if (
             $stored === null
+            || $response->userHandle === ''
             || (
                 $ceremony->subjectId !== null
                 && !$ceremony->subjectId->equals($stored->subjectId)
@@ -225,7 +226,7 @@ final readonly class WebAuthnService
                 $response,
                 $options,
                 $host,
-                $response->userHandle,
+                $ceremony->subjectId?->toString(),
             );
         } catch (\Throwable) {
             return null;

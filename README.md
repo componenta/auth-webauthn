@@ -25,6 +25,12 @@ verification.
 binding, call `commitAuthentication()`; issue or rotate a session only when it
 returns `true`. The unused preliminary `WebAuthnAuthentication` DTO has been removed.
 
+For authentication started with a known subject, including reauthentication,
+the stored ceremony subject supplies the expected user handle. The authenticator
+may omit its returned handle; a supplied handle must match the credential owner.
+Discoverable authentication still requires a matching returned handle. An empty
+non-null handle is rejected in either flow.
+
 ## Database schema upgrade
 
 `DatabaseWebAuthnStore` requires a `revision` column in the credential table.
