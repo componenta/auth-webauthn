@@ -186,9 +186,7 @@ final class LoginAdmissionTest extends TestCase
             ->withParsedBody(['ceremony_id' => $ceremony->uuid->toString(), 'credential' => $browser]);
 
         $response = $handler->handle($request);
-        if ($useStockTransport) {
-            $response = $state->apply($request, $response);
-        }
+        $response = $state->apply($request, $response);
 
         self::assertSame($blocked ? 401 : 204, $response->getStatusCode());
         if ($useStockTransport) {
