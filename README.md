@@ -1,7 +1,7 @@
 # Componenta Auth WebAuthn
 
 WebAuthn/passkey registration, authentication and reauthentication for
-Componenta Auth 3.
+Componenta Auth 4.
 
 Cryptographic ceremony validation is delegated to `web-auth/webauthn-lib`.
 Componenta owns only RP/origin configuration, short-lived one-time ceremonies,
@@ -52,12 +52,15 @@ Cycle database prefix, adjust the migration's table name accordingly. Existing
 credentials receive the default revision of zero. Older package code remains
 compatible with the added column, so the schema can be upgraded first.
 
-## Version 2 compatibility
+## Requirements
 
-This line requires `componenta/auth-session-http ^2.0.1`, and therefore the
-CSRF v3 browser security contract. Unsafe CSRF-protected requests must include
-valid Origin/Referer evidence as well as an admitted CSRF token; missing source
-metadata is denied, not bypassed.
+PHP 8.4 or newer and the coordinated Componenta Auth 4 dependencies:
+`componenta/auth ^4.0.0`, `componenta/auth-session ^2.0.0` and
+`componenta/auth-session-http ^3.0.0`. The browser transport uses
+`componenta/http-csrf-middleware ^4.0.0`. Unsafe CSRF-protected requests require
+valid Origin/Referer evidence and an admitted CSRF token.
 
-See [CHANGELOG.md](CHANGELOG.md) for coordinated migration details.
-Authentication still uses Componenta Auth's shared session issuer.
+Upgrade these packages together. Session issuance uses the shared Componenta
+Auth session APIs. See [CHANGELOG.md](CHANGELOG.md) for migration details.
+
+See [UPGRADING.md](UPGRADING.md) for factor-management and storage migration requirements.

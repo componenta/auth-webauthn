@@ -1,4 +1,4 @@
-# Auth 3 development security integration
+# Auth 4 security integration
 
 WebAuthnLoginVerifyHandler requires a single AuthenticationGuardInterface as
 its final constructor argument. Use the same account-admission policy as the
@@ -14,5 +14,6 @@ Initial enrollment and replacement are distinct application policy decisions;
 recent evidence does not imply authorization to replace every type of factor.
 
 Login and reauthentication explicitly handle a terminal denial from the final
-session issuer without passing it to the credential publisher. No migration
-or database schema change is required by this integration change.
+session issuer without passing it to the credential publisher. Existing database
+installations must also apply the [credential revision migration](README.md#database-schema-upgrade)
+before deploying version 3.
