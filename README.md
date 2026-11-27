@@ -31,6 +31,11 @@ may omit its returned handle; a supplied handle must match the credential owner.
 Discoverable authentication still requires a matching returned handle. An empty
 non-null handle is rejected in either flow.
 
+Ceremony consumption reads its deadline from the writer and rechecks expiry after
+the conditional single-use UPDATE. A ceremony that expires while that write waits
+cannot authorize authentication; the claimed ceremony remains consumed. This
+check adds one writer SELECT without changing the schema or public API.
+
 ## Database schema upgrade
 
 `DatabaseWebAuthnStore` requires a `revision` column in the credential table.

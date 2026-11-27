@@ -2,6 +2,12 @@
 
 ## Unreleased (3.0.0)
 
+### Fixed
+
+- Read the ceremony deadline from the writer and reject consumption that
+  completes at or after that deadline. Keep the atomic single-use UPDATE;
+  the expiry check adds one writer SELECT and does not change the schema.
+
 ### Dependency compatibility
 
 - Require Componenta Auth 4, Auth Session 2 and Auth Session HTTP 3, including

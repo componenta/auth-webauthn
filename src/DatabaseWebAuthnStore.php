@@ -105,15 +105,23 @@ final readonly class DatabaseWebAuthnStore implements WebAuthnStoreInterface
         UuidInterface $ceremonyId,
         WebAuthnCeremonyType $type,
     ): bool {
+        $ceremony = $this->findCeremony($ceremonyId, $type);
+
+        if ($ceremony === null) {
+            return false;
+        }
+
         $now = $this->format($this->now());
 
-        return $this->database->update($this->ceremonyTable)
+        $affected = $this->database->update($this->ceremonyTable)
             ->where('uuid', $ceremonyId->toString())
             ->where('type', $type->value)
             ->where('used_at', null)
             ->where('expires_at', '>', $now)
             ->values(['used_at' => $now])
-            ->run() === 1;
+            ->run();
+
+        return $affected === 1 && $ceremony->expiresAt > $this->now();
     }
 
     #[\Override]
